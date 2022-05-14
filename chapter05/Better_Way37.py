@@ -109,3 +109,87 @@ print(book.average_grade('알버트 아인슈타인'))
 # 변경된 average_grade 메서드는 루프 안에 루프가 쓰이면서 읽기 어려워졌다
 
 # 클래스로 리팩터링하기
+
+#  일단 튜플을 사용하여 리스트에 저장한다
+
+grades = []
+grades.append((95, 0.45, '참 잘했어요'))
+grades.append((85, 0.55, '조금 만 더 열심히'))
+total = sum(score * weight for score, weight, _ in grades)
+total_weight = sum(weight for _, weight, _ in grades)
+average_grade = total / total_weight
+
+# 위 코드의 문제점은 튜플의 저장된 내부 원소에 위치를 사용해 접근한다는 것이다
+
+# 예를 들어 선생님이 메모를 추가해야 해서 점수와 연관시킬 정보다 더 늘어났다면
+# 원소가 두 개인 튜플을 처리하던 코드 각 부분을 모두 세 개인 튜플을 처리하도록 바꿔야한다
+
+grades = []
+grades.append((95, 0.45, '참 잘했어요'))
+grades.append((85, 0.55, '조금 만 더 열심히'))
+total = sum(score * weight for score, weight, _ in grades)
+total_weight = sum(weight for _, weight, _ in grades)
+average_grade = total / total_weight
+
+# 원소가 세 개 이상인 튜플을 사용한다면 다른 접근 방법을 생각해봐야한다
+# collection 내장 모듈에 있는 namedtuple 타입이 이런 경우에 들어맞는다
+
+from collections import namedtuple
+Grade = namedtuple('Grade', ('score', 'weight'))
+
+## namedtuple의 한계
+## - 디폴트 인자 값을 지정할 수 없다
+## - 여전히 숫자 인덱스를 사용해 접근할 수 있고 이터레이션도 가능하다
+
+
+# 일련의 점수를 포함하는 단일 과목을 표현하는 클래스를 작성할 수 있다
+class Subject:
+    def __init__(self):
+        self._grades = []
+
+    def report_grade(self, score, weight):
+        self._grades.append(Grade(score, weight))
+
+    def average_grade(self):
+        total, total_weight = 0, 0
+        for grade in self._grades:
+            total += grade.score * grade.weight
+            total_weight += grade.weight
+        return total / total_weight
+    
+# 다음으로 한 학생이 수강하는 과목들을 표현하는 클래스를 작성할 수 있다
+class Student:
+    def __init__(self):
+        self._subjects = defaultdict(Subject)
+
+    def get_subject(self, name):
+        return self._subjects[name]
+
+    def average_grade(self):
+        total, count = 0, 0
+        for subject in self._subjects.values():
+            total += subject.average_grade()
+            count += 1
+        return total / count
+
+# 모든 학생을 저장하는 컨테이너를 만들 수 있다
+class Gradebook:
+    def __init__(self):
+        self._students = defaultdict(Student)
+
+    def get_student(self, name):
+        return self._students[name]
+
+
+# 이렇게 하면 이전에 구현한 코드의 두 배 이상이다
+# 하지만 새 코드가 더 읽기 쉽다
+book = Gradebook()
+albert = book.get_student('알버트 아인슈타인')
+math = albert.get_subject('수학')
+math.report_grade(75, 0.05)
+math.report_grade(65, 0.15)
+math.report_grade(70, 0.80)
+gym = albert.get_subject('체육')
+gym.report_grade(100, 0.40)
+gym.report_grade(85, 0.60)
+print(albert.average_grade())
