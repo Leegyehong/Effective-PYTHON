@@ -1,5 +1,5 @@
 # Effective-PYTHON
-
+[![Cover](./cover.jpg)](https://effectivepython.com)
 
 - 사용 교재 : 'Effective PYTHON 2ND'
 - 출판사 : 길벗
