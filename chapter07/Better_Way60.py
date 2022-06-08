@@ -1,8 +1,11 @@
-# 동시성을 위해 스레드가 필요한 경우에는 ThreadpoolExecutor를 사용하라
+# I/O를 할 때는 코루틴을 사용해 동시성을 높여라
 
-# 파이썬에는 concurrent.futures 라는 내장모듈이 있다
-# 이 모듈에서 ThreadPoolExecutor 클래스를 제공한다
-# ThreadPoolExecutor는 Thread를 사용한 접근 방법들의 장점을 조합해 병렬 I/O문제를 해결한다
+# 파이썬은 높은 I/O 동시성을 처리하기 위해 코루틴을 사용한다
+# 코루틴을 사용하면 동시에 실행되는 것처럼 보이는 함수를 아주 많이 쓸 수 있다
+# 코루틴은 async 와 await 키워드를 사용해 구현된다
+
+# await 에서 일시중단되고, 일시 중단된 대기 가능성이 해결된 다음에 asyncs 로부터 실행을 재개한다
+# 여러 분리된 asyncs 함수가 서로 장단을 맞춰 실행되면 마치 모든 async함수가 동시에 실행되는 것처럼 보인다
 
 from queue import Queue
 from threading import Thread
@@ -10,6 +13,7 @@ from threading import Lock
 import time
 
 from queue import Queue
+# 파이썬 3.6이하에서는 실행되지 않는다.
 
 class ClosableQueue(Queue):
     SENTINEL = object()
@@ -71,23 +75,6 @@ class Grid:
             output += '\n'
         return output
 
-class LockingGrid(Grid):
-    def __init__(self, height, width):
-        super().__init__(height, width)
-        self.lock = Lock()
-
-    def __str__(self):
-        with self.lock:
-            return super().__str__()
-
-    def get(self, y, x):
-        with self.lock:
-            return super().get(y, x)
-
-    def set(self, y, x, state):
-        with self.lock:
-            return super().set(y, x, state)
-
 def count_neighbors(y, x, get):
     n_ = get(y - 1, x + 0) # 북(N)
     ne = get(y - 1, x + 1) # 북동(NE)
@@ -106,7 +93,7 @@ def count_neighbors(y, x, get):
     #data = my_socket.recv(100)
     return count
 
-def game_logic(state, neighbors):
+async def game_logic(state, neighbors):
     if state == ALIVE:
         if neighbors < 2:
             return EMPTY # 살아 있는 이웃이 너무 적음: 죽음
@@ -116,14 +103,14 @@ def game_logic(state, neighbors):
         if neighbors == 3:
             return ALIVE # 다시 생성됨
 
-    # 여기서 블러킹 I/O를 수행한다
-    #data = my_socket.recv(100)
+    # 여기서 I/O를 수행한다
+    #data = await my_socket.recv(100)
     return state
 
-def step_cell(y, x, get, set):
+async def step_cell(y, x, get, set):
     state = get(y, x)
     neighbors = count_neighbors(y, x, get)
-    next_state = game_logic(state, neighbors)
+    next_state = await game_logic(state, neighbors)
     set(y, x, next_state)
 
 class ColumnPrinter:
@@ -154,24 +141,26 @@ class ColumnPrinter:
 
         return '\n'.join(rows)
 
-# Grid의 각 셀에 대해 새 Thread 인스턴스를 시작하는 대신
-# 함수를 실행기(executor)에 제출함으로써 팬아웃 할 수 있다
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
-def simulate_pool(pool, grid):
-    next_grid = LockingGrid(grid.height, grid.width)
-    futures = []
+async def simulate(grid):
+    next_grid = Grid(grid.height, grid.width)
+
+    tasks = []
     for y in range(grid.height):
         for x in range(grid.width):
-            args = (y, x, grid.get, next_grid.set)
-            future = pool.submit(step_cell, *args)  # 팬아웃
-            futures.append(future)
+            task = step_cell(
+                y, x, grid.get, next_grid.set)  # 팬아웃
+            tasks.append(task)
 
-    for future in futures:
-        future.result()  # 팬인
+    await asyncio.gather(*tasks)  # 팬인
 
     return next_grid
-
+# step_cell을 호출해도 이 함수가 즉시 호출되지 않는다 
+# => 대신 step_cell 호출은 나중에 await 식에 사용될 수 있는 coroutine 인스턴스를 반환한다
+# asyncio 내장 라이브러리가 제공하는 gather 함수는 팬인을 수행한다
+# => gather에 대해 적용한 await 식은 이벤트 루프가 step_cell 코루틴을 동시에 실행하면서 step_cell 코루틴이 완료될 때마다 simulate 코루틴 실행을 재개하라고 요청한다
+# 모든 실행이 단일 스레드에서 이뤄지므로 Grid 인스턴스에 락을 사용할 필ㄹ요가 없다  
 grid = Grid(5, 9)
 grid.set(0, 3, ALIVE)
 grid.set(1, 4, ALIVE)
@@ -180,11 +169,9 @@ grid.set(2, 3, ALIVE)
 grid.set(2, 4, ALIVE)
 
 columns = ColumnPrinter()
-with ThreadPoolExecutor(max_workers=10) as pool:
-    for i in range(5):
-        columns.append(str(grid))
-        grid = simulate_pool(pool, grid)
+for i in range(5):
+    columns.append(str(grid))
+    # python 3.7이상에서만 asyncio.run을 제공함
+    grid = asyncio.run(simulate(grid)) # 이벤트 루프를 실행한다
 
 print(columns)
-
-# 아직도 제한된 수의 I/O 병렬성만 제공한다는 큰 문제점이 남아있다
