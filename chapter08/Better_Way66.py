@@ -1,6 +1,4 @@
-#
-# 아이템 66
-#
+# 재사용 가능한 try/finally 동작을 원한다면 contextlib과 with 문을 사용하라
 import logging
 
 def my_function():
