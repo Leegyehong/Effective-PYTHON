@@ -1,6 +1,5 @@
-#
-# 아이템 67
-#
+# 지역 시간에는 time보다는 datetime을 사용하라
+
 
 # 타임존 설정을 해야 아래 예제들이 정상 작동함
 # 주의: 윈도우에서는 작동하지 않음!
@@ -10,6 +9,7 @@ time.tzset()
 
 import time
 
+# 
 now = 1598523184
 local_tuple = time.localtime(now)
 time_format = '%Y-%m-%d %H:%M:%S'
@@ -30,7 +30,7 @@ arrival_sfo = '2020-08-28 04:13:04 PDT'
 # 오류가 나는 부분. 오류를 보고 싶으면 커멘트를 해제할것
 #time_tuple = time.strptime(arrival_sfo, time_format)
 
-#
+# 파이썬에서 시간을 표시하는 두 번째 방법
 from datetime import datetime, timezone
 
 now = datetime(2020, 8, 27, 10, 13, 4)      # 시간대 설정이 안된 시간을 만듦
@@ -44,7 +44,8 @@ time_tuple = now.timetuple()                     # 유닉스 시간 구조체로
 utc_now = time.mktime(time_tuple)                # 구조체로부터 유닉스 타임스탬프 생성
 print(utc_now)
 
-#
+# pytz를 효과적으로 사용하려면 항상 지역 시간을 UTC로 먼저 바꿔야한다
+# UTC값에 대한 datetime 연산을 수행하고, 지역시간으로 바꾸어라
 import pytz
 
 arrival_sfo = '2020-08-28 04:13:04'
