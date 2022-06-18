@@ -1,6 +1,6 @@
-#
-# 아이템 69
-#
+# 정확도가 매우 중요한 경우에는 decimal을 사용하라
+
+
 rate = 1.45
 seconds = 3*60 + 42
 cost = rate * seconds / 60
@@ -15,6 +15,9 @@ seconds = Decimal(3*60 + 42)
 cost = rate * seconds / Decimal(60)
 print(cost)
 
+# Decimal 인스턴스에 값을 지정하는 방법은 두 가지가 있다
+# 첫째, 숫자가 들어있는 str을 Decimal 생성자에 전달하는법
+# 둘째, int나 float 인스턴스를 생성자에 전달하는법
 print(Decimal('1.45'))
 print(Decimal(1.45))
 
