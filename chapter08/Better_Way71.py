@@ -1,6 +1,8 @@
-#
-# 아이템 71
-#
+# 생산자-소비자 큐로 deque를 사용하라
+
+
+# FIFO를 생산자-소비자 큐라고 부르기도 한다
+# 프로그래머들은 내장 리스트 타입을 FIFO큐로 쓰곤한다
 import random
 
 # walus 연산자 때문에 파이썬 3.8이상에서만 실행됨
@@ -54,6 +56,8 @@ def my_end_func():
 
 loop([], my_end_func)
 
+# 위 코드도 어느정도까지 잘 작동함
+# 하지만 크기가 늘어나면 리스트 타입의 성능은 선형보다 나빠진다
 
 import timeit
 
@@ -87,7 +91,8 @@ baseline = list_append_benchmark(500)
 for count in (1_000, 2_000, 3_000, 4_000, 5_000):
     comparison = list_append_benchmark(count)
     print_delta(baseline, comparison)
-
+# 이 결과는 리스트 타입에 있는 append 메서드가 거의 상수 시간이 걸린다는 것을 보여줌
+# 따라서 데이터가 커짐에 따라 큐에 데이터를 넣는 데 걸리는 전체 시간이 선형적으로 늘어난다
 #
 def list_pop_benchmark(count):
     def prepare():
@@ -112,7 +117,10 @@ for count in (1_000, 2_000, 3_000, 4_000, 5_000):
     comparison = list_pop_benchmark(count)
     print_delta(baseline, comparison)
 
-#
+# append경우와 비슷하게 여러 크기의 큐에 대해 실행하면 큐 길이가 성능에 어떤 영향을 미치는지 확인가능
+
+# collections 내장모듈에는 deque 클래스가 존재한다
+# FIFO큐를 구현할 때 이상적
 import collections
 
 def deque_append_benchmark(count):
