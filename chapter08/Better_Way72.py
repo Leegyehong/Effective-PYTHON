@@ -1,9 +1,9 @@
-#
-# 아이템 72
-#
+# 정렬된 시퀀스를 검색할 때는 bisect를 사용하라
+
 data = list(range(10**5))
 index = data.index(91234)
 assert index == 91234
+# 리스트 길이에 선형으로 비례하는 시간 필요
 
 def find_closest(sequence, goal):
     for index, value in enumerate(sequence):
@@ -14,6 +14,9 @@ def find_closest(sequence, goal):
 index = find_closest(data, 91234.56)
 assert index == 91235
 
+# bisect 모듈은 순서가 정해져 있는 리스트에 대해 검사를 더 효과적으로 수행함
+# bisect_left를 사용하면 정렬된 원소로 이뤄진 시퀀스에 대해 이진검색을 효율적으로 수행함
+# bisect_left가 반환하는 인덱스는 리스트에 찾는 값의 원소가 존재하는 경우는 원소의 인덱스, 없으면 정렬 순서상 해당 값을 삽입해야 할 자리의 인덱스
 from bisect import bisect_left
 
 index = bisect_left(data, 91234) # 정확히 일치
