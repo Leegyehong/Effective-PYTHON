@@ -1,6 +1,4 @@
-#
-# 아이템 74
-#
+# bytes를 복사하지 않고 다루려면 memoryview와 bytearray를 사용하라 
 
 def timecode_to_index(video_id, timecode):
     return 1243
