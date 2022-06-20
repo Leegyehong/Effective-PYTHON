@@ -1,6 +1,6 @@
-#
-# 아이템 73
-#
+## 우선순위 큐로 heapq를 사용하는 방법을 알아두라
+
+# 때로는 원소를 받은 순서가 아니라 원소 간의 상대적인 중요도에 따라 정렬해야하는 경우가 있다
 import timeit
 import random
 
@@ -55,6 +55,8 @@ except NoOverdueBooks:
     pass         # 이 문장이 실행되리라 예상함
 else:
     assert False # 이 문장은 결코 실행되지 않음
+# 위 코드는 이상적이지 않음
+# 책을 추가할 때마다 전체 리스트를  다시 정렬해야하는 추가 비용이 들감
 
 #
 def print_results(count, tests):
